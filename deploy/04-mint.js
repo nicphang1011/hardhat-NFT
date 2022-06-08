@@ -1,4 +1,5 @@
 const { network, ethers } = require("hardhat")
+const { developmentChains } = require("../helper-hardhat-config")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts()
@@ -10,22 +11,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await basicMintTx.wait(1)
     console.log(`Basic NFT index 0 tokenURI: ${await basicNft.tokenURI(0)}`)
 
-    // Dynamic SVG  NFT
-    const highValue = ethers.utils.parseEther("4000")
-    const dynamicSvgNft = await ethers.getContract("DynamicSvgNft", deployer)
-    const dynamicSvgNftMintTx = await dynamicSvgNft.mintNft(highValue)
-    await dynamicSvgNftMintTx.wait(1)
-    console.log(
-        `Dynamic SVG NFT index 0 tokenURI: ${await dynamicSvgNft.tokenURI(0)}`
-    )
-
     // Random IPFS NFT
     const randomIpfsNft = await ethers.getContract("RandomIpfsNft", deployer)
     const mintFee = await randomIpfsNft.getMintFee()
-    const randomIpfsNftMintTx = await randomIpfsNft.requestNft({
-        value: mintFee.toString(),
-    })
-    const randomIpfsNftMintTxReceipt = await randomIpfsNftMintTx.wait(1)
+
     // Need to listen for response
     await new Promise(async (resolve) => {
         setTimeout(resolve, 300000) // 5 minute timeout time
@@ -33,7 +22,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         randomIpfsNft.once("NftMinted", async () => {
             resolve()
         })
-        if (chainId == 31337) {
+        const randomIpfsNftMintTx = await randomIpfsNft.requestNft({
+            value: mintFee.toString(),
+        })
+        const randomIpfsNftMintTxReceipt = await randomIpfsNftMintTx.wait(1)
+        if (developmentChains.includes(network.name)) {
             const requestId =
                 randomIpfsNftMintTxReceipt.events[1].args.requestId.toString()
             const vrfCoordinatorV2Mock = await ethers.getContract(
@@ -48,6 +41,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     })
     console.log(
         `Random IPFS NFT index 0 tokenURI: ${await randomIpfsNft.tokenURI(0)}`
+    )
+
+    // Dynamic SVG  NFT
+    const highValue = ethers.utils.parseEther("4000")
+    const dynamicSvgNft = await ethers.getContract("DynamicSvgNft", deployer)
+    const dynamicSvgNftMintTx = await dynamicSvgNft.mintNft(highValue)
+    await dynamicSvgNftMintTx.wait(1)
+    console.log(
+        `Dynamic SVG NFT index 0 tokenURI: ${await dynamicSvgNft.tokenURI(0)}`
     )
 }
 module.exports.tags = ["all", "mint"]

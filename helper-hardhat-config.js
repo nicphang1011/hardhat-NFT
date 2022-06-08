@@ -8,6 +8,7 @@ const networkConfig = {
         callbackGasLimit: "500000",
         interval: "30",
         mintFee: "10000000000000000",
+        ethUsdPriceFeed: "0x9326BFA02ADD2366b30bacB125260Af641031331",
     },
     4: {
         name: "rinkeby",
